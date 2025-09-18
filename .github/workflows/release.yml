@@ -79,11 +79,6 @@ jobs:
         with:
           name: manager-binaries-${{ matrix.rustc-target }}
           path: target/dist/*
-      
-      - name: Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: target/dist/*
 
       # - name: Distribute
       #   uses: bxb100/action-upload@main
