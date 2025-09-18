@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - "v*"
+# 允许手动触发 workflow
+  workflow_dispatch:
 # on:
 #   - push
 
