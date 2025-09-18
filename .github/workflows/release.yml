@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - "v*"
-# 允许手动触发 workflow
-  workflow_dispatch:
 # on:
 #   - push
 
@@ -29,7 +27,7 @@ jobs:
             rustc-target: x86_64-unknown-linux-musl
           - os: ubuntu-latest
             rustc-target: aarch64-unknown-linux-musl
-            
+
     runs-on: ${{ matrix.os }}
     env:
       rust-version: '1.83'
@@ -37,24 +35,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # - name: Install dependencies for Linux
-      #   if: ${{ runner.os == 'Linux' }}
-      #   run: |-
-      #     sudo apt install libssl-dev
-
-      - name: Install dependencies for Linux musl
-        if: ${{ runner.os == 'Linux' && contains(matrix.rustc-target, 'musl') }}
-        run: |-
+      - name: Install dependencies
+        if: runner.os == 'Linux'
+        run: |
           sudo apt-get update
-          sudo apt-get install -y musl-tools musl-dev gcc-aarch64-linux-gnu
-      
+          sudo apt-get install -y musl-tools musl-dev
+          if [[ "${{ matrix.rustc-target }}" == "aarch64-unknown-linux-musl" ]]; then
+            sudo apt-get install -y gcc-aarch64-linux-gnu
+          fi
+
+      - name: Configure Cargo for aarch64-musl
+        if: matrix.rustc-target == 'aarch64-unknown-linux-musl'
+        run: |
+          mkdir -p .cargo
+          echo '[target.aarch64-unknown-linux-musl]' > .cargo/config.toml
+          echo 'linker = "aarch64-linux-gnu-gcc"' >> .cargo/config.toml
+
       - name: Setup Nodejs
         uses: actions/setup-node@v4
         with:
           node-version: 22.x
           cache: 'npm'
           cache-dependency-path: web/package-lock.json
-      
+
       - name: Build web pages
         working-directory: web
         run: |-
@@ -73,7 +76,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: target/dist/*
-      
+
       # - name: Distribute
       #   uses: bxb100/action-upload@main
       #   with:
